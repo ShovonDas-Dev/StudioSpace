@@ -12,7 +12,7 @@ import { ThemeToggle } from "@/components/Navbar/theme-toggle"
 const navLinks = [
   { href: "/", label: "Home" },
   { href: "/studios", label: "Explore" },
-  { href: "/add-studio", label: "List a studio" },
+  { href: "/add-studio", label: "Add Studio" },
   { href: "/my-listings", label: "My listings" },
   { href: "/my-bookings", label: "My bookings" },
 ]

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Fraunces, Manrope } from "next/font/google";
 import "./globals.css";
 
+import { Footer } from "@/components/Footer/footer";
 import { Navbar } from "@/components/Navbar/Navbar";
 import { ThemeProvider } from "@/components/Navbar/theme-provider";
 import { THEME_SCRIPT } from "@/lib/theme";
@@ -38,6 +39,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <ThemeProvider>
           <Navbar />
           {children}
+          <Footer />
         </ThemeProvider>
       </body>
     </html>
