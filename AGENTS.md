@@ -33,7 +33,8 @@ Before the final response, run one reporting pass. If candidates remain, from th
 
 - Next.js 16.4.5 App Router, no `src/`: `app/`, `components/`, `hooks/`, and `lib/` are at the repo root. `@/*` maps to the repo root, not `src/`.
 - Mixed JS/TS: `app/page.jsx` and `components/Hero/hero-section.jsx` are plain JSX; most other files are TSX. `allowJs` is on, so match the file you are editing rather than converting it.
-- Only `/` and `/add-studio` routes exist. Navbar links to `/studios`, `/my-listings`, `/my-bookings`, `/login`, and `/register` are placeholders with no pages. There is no backend, API route, auth, database, or data layer yet.
+- Routes that exist: `/` (`app/page.jsx`), `/add-studio`, and `/login` + `/register` under `app/(Authentication)/` — where both `page.tsx` files are empty placeholders (0 bytes). Navbar/Footer still link to `/studios`, `/my-listings`, and `/my-bookings`, which have no pages. There is no backend, API route, auth, database, or data layer yet.
+- `app/layout.tsx` wraps every page with `Navbar`, `Footer`, and `ThemeProvider`, and injects `THEME_SCRIPT` (from `lib/theme.ts`) inline in `<head>`. New routes get the chrome automatically.
 - `next.config.ts` enables `cacheComponents` and `partialPrefetching` at the top level, so routes follow Cache Components rules (uncached data under `<Suspense>`, `"use cache"`, etc.). Read `node_modules/next/dist/docs/01-app/01-getting-started/08-caching.md` before adding data fetching.
 - `LayoutProps` / `PageProps` are global generated helpers; do not import them. See `app/layout.tsx`.
 
@@ -41,7 +42,7 @@ Before the final response, run one reporting pass. If candidates remain, from th
 
 - Use npm (only `package-lock.json` is present).
 - `npm run dev` | `npm run build` | `npm start`
-- `npm run lint` runs ESLint 9 with the flat config in `eslint.config.mjs` and no file args. It currently fails on baseline with two pre-existing `react-hooks/set-state-in-effect` errors: `components/ui/carousel.tsx:98` and `hooks/use-mobile.ts:14`. Do not attribute these to your change.
+- `npm run lint` runs ESLint 9 with the flat config in `eslint.config.mjs` and no file args. It currently fails on baseline with two pre-existing `react-hooks/set-state-in-effect` errors: `components/ui/carousel.tsx:98` and `hooks/use-mobile.ts:14`. Do not attribute these to your change. (Baseline warnings: unused `Form` import in `app/add-studio/page.tsx`, `no-img-element` in `components/Home/FeaturedStudio.jsx` and `ForHosts.jsx`.)
 - Type-check with `npx tsc --noEmit`; it passes on baseline.
 - No test script or test framework is configured. No CI workflows exist in the repo.
 
