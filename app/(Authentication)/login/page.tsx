@@ -3,9 +3,12 @@
 import { useState, type FormEvent } from "react"
 import Image from "next/image"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { EyeIcon, EyeOffIcon } from "lucide-react"
 
 import { cn } from "cn"
+import { toast } from "@/components/ui/toast"
+import { authClient } from "@/lib/auth-client"
 
 const inputClass =
   "h-12 w-full rounded-full border border-input bg-background px-4 text-base shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
@@ -47,11 +50,32 @@ export default function LoginPage() {
     email: "",
     password: "",
   })
-  console.log(formData)
+  const router = useRouter()
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    console.log("Form submitted:", formData)
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
+    const { data, error } = await authClient.signIn.email({
+      email: formData.email,
+      password: formData.password,
+    })
+
+    console.log("Signed in successfully:", data)
+
+    if (error) {
+      toast.add({
+        title: "Log in failed",
+        description: error.message ?? "Please check your email and password.",
+        type: "error",
+      })
+      return
+    }
+
+    toast.add({
+      title: "Logged in",
+      description: "Welcome back to StudioSpace.",
+      type: "success",
+    })
+    router.push("/")
   }
 
   return (

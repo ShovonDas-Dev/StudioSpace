@@ -4,10 +4,10 @@ import * as React from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { MenuIcon, XIcon } from "lucide-react"
-import { cn } from "cn"
 
 import { Button } from "@/components/ui/button"
 import { ThemeToggle } from "@/components/Navbar/theme-toggle"
+import UserMenu from "@/components/Navbar/user-menu"
 
 const navLinks = [
   { href: "/", label: "Home" },
@@ -22,12 +22,6 @@ const desktopLinkClass =
 
 const mobileLinkClass =
   "rounded-xl px-3 py-3 font-medium text-muted-foreground transition-colors hover:text-foreground data-[status=active]:bg-accent data-[status=active]:text-accent-foreground"
-
-const ghostLinkClass =
-  "inline-flex h-9 items-center justify-center rounded-full px-4 text-xs font-semibold text-foreground transition-colors hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-
-const primaryLinkClass =
-  "inline-flex h-9 items-center justify-center rounded-full bg-primary px-4 text-xs font-semibold text-primary-foreground shadow-soft transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lift focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background active:scale-[0.98]"
 
 export function Navbar() {
   const pathname = usePathname()
@@ -71,13 +65,10 @@ export function Navbar() {
           <ThemeToggle />
 
           <div className="hidden items-center gap-2 md:flex">
-            <Link href="/login" className={ghostLinkClass}>
-              Log in
-            </Link>
-            <Link href="/register" className={primaryLinkClass}>
-              Get started
-            </Link>
+            <UserMenu />
           </div>
+
+          {/* Mobile button and toogler */}
 
           <Button
             variant="ghost"
@@ -119,20 +110,7 @@ export function Navbar() {
             ))}
 
             <div className="mt-3 flex gap-2 border-t border-border pt-4">
-              <Link
-                href="/login"
-                className={cn(ghostLinkClass, "h-10 flex-1 border border-border")}
-                onClick={() => setIsMenuOpen(false)}
-              >
-                Log in
-              </Link>
-              <Link
-                href="/register"
-                className={cn(primaryLinkClass, "h-10 flex-1")}
-                onClick={() => setIsMenuOpen(false)}
-              >
-                Get started
-              </Link>
+              <UserMenu layout="mobile" />
             </div>
           </nav>
         </div>

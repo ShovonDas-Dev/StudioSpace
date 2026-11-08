@@ -3,9 +3,12 @@
 import { useState, type FormEvent } from "react"
 import Image from "next/image"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { CheckIcon, XIcon } from "lucide-react"
 
 import { cn } from "cn"
+import { toast } from "@/components/ui/toast"
+import { authClient } from "@/lib/auth-client"
 
 const inputClass =
   "h-12 w-full rounded-full border border-input bg-background px-4 text-base shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
@@ -60,10 +63,34 @@ export default function RegisterPage() {
 
   console.log(formData)
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
+  const router = useRouter()
 
-    console.log("Form submitted:", formData)
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    const { data, error } = await authClient.signUp.email({
+      name: formData.name,
+      email: formData.email,
+      image: formData.image,
+      password: formData.password,
+    })
+
+    console.log("Sign-up response:", { data, error })
+
+    if (error) {
+      toast.add({
+        title: "Sign up failed",
+        description: error.message ?? "Please check your details and try again.",
+        type: "error",
+      })
+      return
+    }
+    
+    toast.add({
+      title: "Account created",
+      description: "Welcome to StudioSpace.",
+      type: "success",
+    })
+    router.push("/")
   }
 
   return (

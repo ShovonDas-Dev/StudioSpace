@@ -6,6 +6,7 @@ import { Footer } from "@/components/Footer/footer";
 import { Navbar } from "@/components/Navbar/Navbar";
 import { ThemeProvider } from "@/components/Navbar/theme-provider";
 import { THEME_SCRIPT } from "@/lib/theme";
+import { Toaster } from "@/components/ui/toast";
 
 const fraunces = Fraunces({
   variable: "--font-fraunces",
@@ -40,6 +41,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           <Navbar />
           {children}
           <Footer />
+          <Toaster />
         </ThemeProvider>
       </body>
     </html>
