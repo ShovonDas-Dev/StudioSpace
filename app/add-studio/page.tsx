@@ -10,6 +10,7 @@ import {
   LayoutGrid, 
 } from "lucide-react"
 import { cn } from "cn"
+import { authClient } from "@/lib/auth-client"
 
 const inputClass =
   "flex h-12 w-full rounded-xl border border-input bg-background px-3 py-1 text-base shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 md:text-sm"
@@ -124,6 +125,12 @@ function SelectBox({
 }
 
 export default function AddStudioPage() {
+  const { data: session, isPending } = authClient.useSession();
+
+  const userName = session?.user.name
+  const userEmail = session?.user.email
+  const userImage = session?.user.image
+
   const [form, setForm] = useState<FormState>({
     title: "",
     category: "photography",
@@ -135,7 +142,7 @@ export default function AddStudioPage() {
     image: "",
     amenities: [],
     description: "",
-    hostName: "Maya Okafor",
+    hostName: userName || "Maya Okafor",
     hostBio: "",
   })
   const [errors, setErrors] = useState<Record<string, string>>({})
@@ -211,13 +218,13 @@ export default function AddStudioPage() {
             <div
               className="h-11 w-11 rounded-full bg-cover bg-center"
               style={{
-                backgroundImage: "url(https://i.pravatar.cc/160?img=47)",
+                backgroundImage: userImage ? `url(${userImage})` : "url(https://i.pravatar.cc/160?img=47)",
               }}
             />
             <div className="min-w-0">
-              <p className="truncate font-semibold">Maya Okafor</p>
+              <p className="truncate font-semibold">{userName || "Maya Okafor"}</p>
               <p className="truncate text-xs text-muted-foreground">
-                maya@studiospace.co
+                {userEmail || "maya@studiospace.co"}
               </p>
             </div>
           </div>
@@ -410,7 +417,8 @@ export default function AddStudioPage() {
                 <Field label="Host name" error={errors.hostName}>
                   <input
                     className={inputClass}
-                    value={form.hostName}
+                    value={userName || ""}
+                    disabled
                     onChange={(event) => update("hostName", event.target.value)}
                   />
                 </Field>
@@ -418,7 +426,7 @@ export default function AddStudioPage() {
                 <Field label="Contact email">
                   <input
                     className={inputClass}
-                    value="maya@studiospace.co"
+                    value={userEmail || ""}
                     disabled
                   />
                 </Field>
