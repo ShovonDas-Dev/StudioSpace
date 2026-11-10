@@ -32,18 +32,24 @@ Before the final response, run one reporting pass. If candidates remain, from th
 ## Project layout
 
 - Next.js 16.4.5 App Router, no `src/`: `app/`, `components/`, `hooks/`, and `lib/` are at the repo root. `@/*` maps to the repo root, not `src/`.
-- Mixed JS/TS: `app/page.jsx` and `components/Hero/hero-section.jsx` are plain JSX; most other files are TSX. `allowJs` is on, so match the file you are editing rather than converting it.
-- Routes that exist: `/` (`app/page.jsx`), `/add-studio`, and `/login` + `/register` under `app/(Authentication)/` — where both `page.tsx` files are empty placeholders (0 bytes). Navbar/Footer still link to `/studios`, `/my-listings`, and `/my-bookings`, which have no pages. There is no backend, API route, auth, database, or data layer yet.
-- `app/layout.tsx` wraps every page with `Navbar`, `Footer`, and `ThemeProvider`, and injects `THEME_SCRIPT` (from `lib/theme.ts`) inline in `<head>`. New routes get the chrome automatically.
+- Mixed JS/TS: `app/page.jsx`, `components/Hero/hero-section.jsx`, and the `components/Home/*` sections are plain JSX; most other files are TSX. `allowJs` is on, so match the file you are editing rather than converting it.
+- `app/layout.tsx` wraps every page with `Navbar`, `Footer`, `ThemeProvider`, and `Toaster`, and injects `THEME_SCRIPT` (from `lib/theme.ts`) inline in `<head>`. New routes get the chrome automatically.
+- `LayoutProps` / `PageProps` are global generated helpers; do not import them. See `app/studios/[id]/page.tsx` for `PageProps<"/studios/[id]">` usage.
+
+## Data, auth, and routes
+
+- Studio listings and bookings come from a separate backend at `http://localhost:5000` (not in this repo): `API_URL` in `lib/studios.ts` (`/allStudio`), booking POST/GET on `/booking`. With the API down, `/studios` shows its error state and booking requests fail. Normalize raw API objects with `normalizeStudio` / `normalizeStudioDetails` from `lib/studios.ts`.
+- Auth is better-auth (email/password + Google OAuth) with MongoDB via `@better-auth/mongo-adapter`: server config in `lib/auth.ts`, client hook `authClient` in `lib/auth-client.ts` (`authClient.useSession()`), catch-all handler at `app/api/auth/[...all]/route.ts`.
+- `.env` holds `MONGODB_URI`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `BETTER_AUTH_URL`. Gotchas: `lib/auth.ts` hardcodes `baseURL`/`trustedOrigins` to `http://localhost:3000` (ignoring `BETTER_AUTH_URL`), and `lib/auth-client.ts` reads `BASE_URI`, which is not in `.env`.
+- Routes present: `/`, `/studios`, `/studios/[id]`, `/add-studio`, `/my-listings`, `/login` + `/register` under `app/(Authentication)/`, and `/api/auth/[...all]`. Navbar still links to `/my-bookings`, which has no page.
 - `next.config.ts` enables `cacheComponents` and `partialPrefetching` at the top level, so routes follow Cache Components rules (uncached data under `<Suspense>`, `"use cache"`, etc.). Read `node_modules/next/dist/docs/01-app/01-getting-started/08-caching.md` before adding data fetching.
-- `LayoutProps` / `PageProps` are global generated helpers; do not import them. See `app/layout.tsx`.
 
 ## Commands
 
 - Use npm (only `package-lock.json` is present).
 - `npm run dev` | `npm run build` | `npm start`
-- `npm run lint` runs ESLint 9 with the flat config in `eslint.config.mjs` and no file args. It currently fails on baseline with two pre-existing `react-hooks/set-state-in-effect` errors: `components/ui/carousel.tsx:98` and `hooks/use-mobile.ts:14`. Do not attribute these to your change. (Baseline warnings: unused `Form` import in `app/add-studio/page.tsx`, `no-img-element` in `components/Home/FeaturedStudio.jsx` and `ForHosts.jsx`.)
-- Type-check with `npx tsc --noEmit`; it passes on baseline.
+- `npm run lint` runs ESLint 9 with the flat config in `eslint.config.mjs` and no file args. It exits non-zero on baseline with two pre-existing `react-hooks/set-state-in-effect` errors: `components/ui/carousel.tsx:98` and `hooks/use-mobile.ts:14`, plus ~10 unused-var / `no-img-element` warnings. Do not attribute these to your change.
+- Type-check with `npx tsc --noEmit`. In the current working tree it fails on `components/StudioDetails/booking-card.tsx` importing the deleted `@/lib/bookings` — pre-existing, not your change.
 - No test script or test framework is configured. No CI workflows exist in the repo.
 
 ## UI conventions

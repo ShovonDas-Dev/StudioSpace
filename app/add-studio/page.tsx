@@ -71,6 +71,7 @@ type FormState = {
   description: string
   hostName: string
   hostBio: string
+  hostEmail: string
 }
 
 function Field({
@@ -125,11 +126,12 @@ function SelectBox({
 }
 
 export default function AddStudioPage() {
-  const { data: session, isPending } = authClient.useSession();
+  const { data: session } = authClient.useSession();
 
   const userName = session?.user.name
   const userEmail = session?.user.email
   const userImage = session?.user.image
+  console.log("User info:", { userName, userEmail, userImage })
 
   const [form, setForm] = useState<FormState>({
     title: "",
@@ -144,6 +146,7 @@ export default function AddStudioPage() {
     description: "",
     hostName: userName || "Maya Okafor",
     hostBio: "",
+    hostEmail: userEmail || ""
   })
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [submitted, setSubmitted] = useState(false)

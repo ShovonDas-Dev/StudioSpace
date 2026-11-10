@@ -34,6 +34,8 @@ export function BookingCard({ studio }: { studio: StudioDetails }) {
   const router = useRouter()
   const { data: session, isPending } = authClient.useSession()
   const user = session?.user
+  // console.log(user)
+  // console.log("User session:", user?.id, user?.email, user?.name ,user?.image)
 
   const [open, setOpen] = useState(false)
   const [date, setDate] = useState("")
@@ -46,35 +48,48 @@ export function BookingCard({ studio }: { studio: StudioDetails }) {
   const total = subtotal + studio.deposit
   const hasRate = studio.hourlyRate > 0
 
-  function handleBookClick() {
-    if (isPending) return
+  // console.log(studio)
 
+  async function handleBookClick (e: React.MouseEvent<HTMLButtonElement>) {
+    e.preventDefault()
+    if (isPending) return
     if (!user) {
       router.push("/login")
       return
     }
 
+   
+
     setOpen(true)
   }
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (!date || !user) return
 
-    saveBookingRequest({
-      studioId: studio.id,
-      studioTitle: studio.title,
-      hostName: studio.hostName,
-      guestName: user.name ?? "",
-      guestEmail: user.email ?? "",
-      date,
-      time,
-      hours: duration,
-      hourlyRate: studio.hourlyRate,
-      deposit: studio.deposit,
-      total,
-    })
+     const data = {
+      email: user?.email,
+      name: user?.name,
+      userImage: user?.image,
+      ...studio,
+     
+      bookingDate: date,
+      bookingTime: time,
+      bookingDuration: duration,
+      bookingSubtotal: subtotal,
+      bookingTotal: total,
+    }
 
+    const res = await fetch("http://localhost:5000/booking", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(data),
+    })
+    
+    console.log(res)
+    
     setOpen(false)
     setDate("")
     toast.add({

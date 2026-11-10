@@ -47,9 +47,10 @@ export function ExploreView() {
         const categoryQuery = category === "all" ? "" : `?category=${category}`
         const response = await fetch(`${API_URL}${categoryQuery}`)
         const data = await response.json()
+        // console.log("Fetched Studios:", data)
 
         const studios = data.map(normalizeStudio)
-        //  console.log("Normalized Studios:", studios)
+         console.log("Normalized Studios:", studios)
         const filteredStudios = studios.filter(Boolean)
         //  console.log("Filtered Studios:", filteredStudios)
         setStudios(filteredStudios)

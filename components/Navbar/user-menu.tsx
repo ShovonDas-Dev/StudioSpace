@@ -104,19 +104,21 @@ export default function UserMenu({ layout }: UserMenuProps) {
               }}
             >
               {/* Profile Icon */}
-              <DialogTrigger >
-                <Button
-                  variant="ghost"
-                  className="h-10 w-10 rounded-full p-0"
-                >
-                  <Avatar>
-                    <AvatarImage src={user.image || ""} />
-                    <AvatarFallback>
-                      {user.name?.charAt(0)?.toUpperCase() || "U"}
-                    </AvatarFallback>
-                  </Avatar>
-                </Button>
-              </DialogTrigger>
+             <DialogTrigger
+  render={
+    <Button
+      variant="ghost"
+      className="h-10 w-10 rounded-full p-0"
+    />
+  }
+>
+  <Avatar>
+    <AvatarImage src={user.image || ""} />
+    <AvatarFallback>
+      {user.name?.charAt(0)?.toUpperCase() || "U"}
+    </AvatarFallback>
+  </Avatar>
+</DialogTrigger>
 
               {/* Profile Dialog */}
               <DialogContent className="sm:max-w-[400px]">

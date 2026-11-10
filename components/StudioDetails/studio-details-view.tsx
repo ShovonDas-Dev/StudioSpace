@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, type ReactNode } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import {
@@ -37,6 +37,10 @@ import {
   type StudioDetails,
 } from "@/lib/studios"
 
+
+
+
+
 const amenityIcons: { match: RegExp; icon: LucideIcon }[] = [
   { match: /wi-?fi|internet/i, icon: Wifi },
   { match: /air|condition|climate|ventilation/i, icon: Wind },
@@ -55,13 +59,37 @@ const amenityIcons: { match: RegExp; icon: LucideIcon }[] = [
 ]
 
 function getAmenityIcon(amenity: string): LucideIcon {
-  return (
-    amenityIcons.find(({ match }) => match.test(amenity))?.icon ?? Check
-  )
+  return amenityIcons.find(({ match }) => match.test(amenity))?.icon ?? Check
 }
 
 function formatMoney(value: number): string {
   return `$${value.toLocaleString("en-US")}`
+}
+
+async function fetchStudio(id: string): Promise<StudioDetails> {
+  const res = await fetch(getStudioDetailsUrl(id))
+
+  if (res.status === 404) throw new Error("not-found")
+  if (!res.ok) throw new Error("network")
+
+  const data = await res.json().catch(() => null)
+  const studio = data ? normalizeStudioDetails(data as RawStudio) : null
+
+  if (!studio) throw new Error("not-found")
+  return studio
+}
+
+
+function BackLink() {
+  return (
+    <Link
+      href="/studios"
+      className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+    >
+      <ArrowLeft className="size-4" />
+      Back to studios
+    </Link>
+  )
 }
 
 function InfoCard({
@@ -88,103 +116,56 @@ function InfoCard({
   )
 }
 
-function BackLink() {
+function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <Link
-      href="/studios"
-      className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
-    >
-      <ArrowLeft className="size-4" />
-      Back to studios
-    </Link>
+    <section className="rounded-3xl border border-border bg-card p-6 shadow-soft md:p-8">
+      <h2 className="mb-4 text-2xl font-semibold md:text-3xl">{title}</h2>
+      {children}
+    </section>
   )
 }
 
+
+/* Main view                                                                  */
+/* -------------------------------------------------------------------------- */
+
+type Status = "loading" | "ready" | "not-found" | "error"
+
 export function StudioDetailsView({ studioId }: { studioId: string }) {
   const [studio, setStudio] = useState<StudioDetails | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<"not-found" | "network" | null>(null)
+  const [status, setStatus] = useState<Status>("loading")
   const [retryKey, setRetryKey] = useState(0)
 
   useEffect(() => {
-    const controller = new AbortController()
+    let ignore = false
 
-    async function loadStudio() {
-      try {
-        const response = await fetch(getStudioDetailsUrl(studioId), {
-          signal: controller.signal,
-        })
+    fetchStudio(studioId)
+      .then((data) => {
+        if (ignore) return
+        setStudio(data)
+        setStatus("ready")
+      })
+      .catch((err: Error) => {
+        if (ignore) return
+        setStatus(err.message === "not-found" ? "not-found" : "error")
+      })
 
-        if (response.status === 404) {
-          throw new Error("not-found")
-        }
-
-        if (!response.ok) {
-          throw new Error("network")
-        }
-
-        const body = await response.text()
-
-        if (!body.trim()) {
-          throw new Error("not-found")
-        }
-
-        let data: unknown
-
-        try {
-          data = JSON.parse(body)
-        } catch {
-          throw new Error("network")
-        }
-
-        if (!data || typeof data !== "object" || Array.isArray(data)) {
-          throw new Error("not-found")
-        }
-
-        const normalized = normalizeStudioDetails(data as RawStudio)
-
-        if (!normalized) {
-          throw new Error("not-found")
-        }
-
-        setStudio(normalized)
-        setError(null)
-      } catch (loadError) {
-        if (controller.signal.aborted) return
-
-        setError(
-          loadError instanceof Error && loadError.message === "not-found"
-            ? "not-found"
-            : "network"
-        )
-      } finally {
-        if (!controller.signal.aborted) {
-          setLoading(false)
-        }
-      }
+    return () => {
+      ignore = true
     }
-
-    loadStudio()
-
-    return () => controller.abort()
   }, [studioId, retryKey])
 
   function retry() {
-    setLoading(true)
-    setError(null)
+    setStatus("loading")
     setRetryKey((key) => key + 1)
   }
 
-  if (loading) {
-    return <StudioDetailsSkeleton />
-  }
+  if (status === "loading") return <StudioDetailsSkeleton />
 
-  if (error) {
-    return <StudioDetailsError notFound={error === "not-found"} onRetry={retry} />
-  }
-
-  if (!studio) {
-    return null
+  if (status !== "ready" || !studio) {
+    return (
+      <StudioDetailsError notFound={status === "not-found"} onRetry={retry} />
+    )
   }
 
   const capacityLabel =
@@ -200,38 +181,33 @@ export function StudioDetailsView({ studioId }: { studioId: string }) {
       <div className="container-page pb-16 pt-6 md:pt-10">
         <BackLink />
 
+        {/* Header */}
         <div className="mt-6 md:mt-8">
-          <span className="inline-flex items-center rounded-full border border-primary/20 bg-accent px-3 py-1 text-[0.7rem] font-bold uppercase tracking-[0.16em] text-accent-foreground">
+          <span className="inline-flex rounded-full border border-primary/20 bg-accent px-3 py-1 text-[0.7rem] font-bold uppercase tracking-[0.16em] text-accent-foreground">
             {studio.categoryLabel}
           </span>
-
           <h1 className="mt-4 max-w-4xl text-4xl font-semibold leading-[1.05] md:text-6xl">
             {studio.title}
           </h1>
-
           <p className="mt-4 flex items-center gap-2 text-sm text-muted-foreground md:text-base">
             <MapPin className="size-4 text-primary" />
             {studio.location}
           </p>
         </div>
 
-        <div className="relative mt-7 overflow-hidden rounded-[2rem] border border-border bg-card shadow-soft">
-          <div className="relative aspect-[16/10] sm:aspect-[16/9] md:aspect-[21/9]">
-            <Image
-              src={studio.image}
-              alt={studio.title}
-              fill
-              preload
-              sizes="(min-width: 1280px) 80rem, 100vw"
-              className="object-cover"
-            />
-            <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/45 to-transparent" />
-            <span className="absolute bottom-5 left-5 rounded-full bg-background/90 px-4 py-2 text-xs font-semibold text-foreground shadow-soft backdrop-blur">
-              {studio.categoryLabel}
-            </span>
-          </div>
+        {/* Image */}
+        <div className="relative mt-7 aspect-[16/10] overflow-hidden rounded-[2rem] border border-border bg-card shadow-soft sm:aspect-[16/9] md:aspect-[21/9]">
+          <Image
+            src={studio.image}
+            alt={studio.title}
+            fill
+            preload
+            sizes="(min-width: 1280px) 80rem, 100vw"
+            className="object-cover"
+          />
         </div>
 
+        {/* Content */}
         <div className="mt-8 grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
           <div className="space-y-6">
             <div className="grid gap-3 sm:grid-cols-3">
@@ -240,27 +216,21 @@ export function StudioDetailsView({ studioId }: { studioId: string }) {
               <InfoCard icon={Clock} label="Hourly rate" value={rateLabel} />
             </div>
 
-            <section className="rounded-3xl border border-border bg-card p-6 shadow-soft md:p-8">
-              <h2 className="text-2xl font-semibold md:text-3xl">
-                About the space
-              </h2>
-              <p className="mt-4 whitespace-pre-line text-sm leading-7 text-muted-foreground md:text-base">
+            <Section title="About the space">
+              <p className="whitespace-pre-line text-sm leading-7 text-muted-foreground md:text-base">
                 {studio.description ||
-                  "The host hasn't added a description for this studio yet."}
+                  "The host hasn't added a description yet."}
               </p>
-            </section>
+            </Section>
 
-            <section className="rounded-3xl border border-border bg-card p-6 shadow-soft md:p-8">
-              <h2 className="text-2xl font-semibold md:text-3xl">Amenities</h2>
-
+            <Section title="Amenities">
               {studio.amenities.length > 0 ? (
-                <div className="mt-5 grid gap-3 sm:grid-cols-2">
-                  {studio.amenities.map((amenity, index) => {
+                <div className="grid gap-3 sm:grid-cols-2">
+                  {studio.amenities.map((amenity, i) => {
                     const Icon = getAmenityIcon(amenity)
-
                     return (
                       <div
-                        key={`${amenity}-${index}`}
+                        key={`${amenity}-${i}`}
                         className="flex items-center gap-3 rounded-2xl border border-border/80 bg-background/60 px-4 py-3"
                       >
                         <span className="grid size-9 shrink-0 place-items-center rounded-full bg-accent text-accent-foreground">
@@ -272,29 +242,17 @@ export function StudioDetailsView({ studioId }: { studioId: string }) {
                   })}
                 </div>
               ) : (
-                <p className="mt-4 text-sm text-muted-foreground">
-                  The host hasn&apos;t listed amenities for this studio yet.
+                <p className="text-sm text-muted-foreground">
+                  The host hasn&apos;t listed amenities yet.
                 </p>
               )}
-            </section>
+            </Section>
 
-            <section className="rounded-3xl border border-border bg-card p-6 shadow-soft md:p-8">
-              <p className="eyebrow">Hosted by</p>
-
-              <div className="mt-4 flex flex-col gap-4 sm:flex-row sm:items-start">
-                <div className="grid size-14 shrink-0 place-items-center rounded-full bg-primary/10 font-display text-xl font-semibold text-primary">
-                  {studio.hostName.charAt(0).toUpperCase()}
-                </div>
-
-                <div className="min-w-0">
-                  <h2 className="text-2xl font-semibold">{studio.hostName}</h2>
-                  <p className="mt-2 whitespace-pre-line text-sm leading-7 text-muted-foreground md:text-base">
-                    {studio.hostBio ||
-                      "This host hasn't added a bio yet."}
-                  </p>
-                </div>
-              </div>
-            </section>
+            <Section title={`Hosted by ${studio.hostName}`}>
+              <p className="whitespace-pre-line text-sm leading-7 text-muted-foreground md:text-base">
+                {studio.hostBio || "This host hasn't added a bio yet."}
+              </p>
+            </Section>
           </div>
 
           <aside className="lg:sticky lg:top-24 lg:self-start">
@@ -305,6 +263,10 @@ export function StudioDetailsView({ studioId }: { studioId: string }) {
     </main>
   )
 }
+
+/* -------------------------------------------------------------------------- */
+/* Loading skeleton                                                           */
+/* -------------------------------------------------------------------------- */
 
 export function StudioDetailsSkeleton() {
   return (
@@ -323,8 +285,8 @@ export function StudioDetailsSkeleton() {
         <div className="mt-8 grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
           <div className="space-y-6">
             <div className="grid gap-3 sm:grid-cols-3">
-              {[0, 1, 2].map((index) => (
-                <Skeleton key={index} className="h-[4.75rem] rounded-2xl" />
+              {[0, 1, 2].map((i) => (
+                <Skeleton key={i} className="h-[4.75rem] rounded-2xl" />
               ))}
             </div>
             <Skeleton className="h-56 rounded-3xl" />
@@ -338,6 +300,10 @@ export function StudioDetailsSkeleton() {
     </main>
   )
 }
+
+/* -------------------------------------------------------------------------- */
+/* Error state                                                                */
+/* -------------------------------------------------------------------------- */
 
 export function StudioDetailsError({
   notFound,
@@ -367,7 +333,7 @@ export function StudioDetailsError({
           </p>
 
           <div className="mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row">
-            {!notFound ? (
+            {!notFound && (
               <button
                 type="button"
                 onClick={onRetry}
@@ -375,7 +341,7 @@ export function StudioDetailsError({
               >
                 Try again
               </button>
-            ) : null}
+            )}
 
             <Link
               href="/studios"

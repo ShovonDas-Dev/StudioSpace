@@ -12,6 +12,7 @@ export default async function StudioDetailsPage({
   params,
 }: PageProps<"/studios/[id]">) {
   const { id } = await params
+  console.log("StudioDetailsPage params:", id)
 
   return <StudioDetailsView key={id} studioId={id} />
 }

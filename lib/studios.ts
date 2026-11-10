@@ -11,6 +11,7 @@ export const categoryLabels: Record<string, string> = {
 };
 
 export type Studio = {
+  _id?: string;
   id: string;
   name: string;
   category: string;
@@ -71,16 +72,16 @@ function hashId(id: string): number {
 }
 
 export function normalizeStudio(raw: RawStudio): Studio | null {
-  const id = raw._id ?? raw.id;
-  if (!id) return null;
+  
 
   const category = raw.category ?? "";
-  const seed = hashId(id);
+  const seed = hashId(raw.id ?? raw._id ?? Math.random().toString());
   const rating = Math.round((4.5 + (seed % 50) / 100) * 10) / 10;
   const reviews = 20 + (Math.floor(seed / 50) % 160);
 
   return {
-    id,
+    _id: raw._id,
+    id : raw._id ?? raw.id ?? "",
     name: raw.studioName ?? raw.title ?? "Untitled studio",
     category,
     categoryLabel: categoryLabels[category] ?? "Studio",
