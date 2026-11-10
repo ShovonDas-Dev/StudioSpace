@@ -1,15 +1,17 @@
-'use client'
-import { useParams } from 'next/navigation'
-import React from 'react'
+import type { Metadata } from "next"
 
-const DetailsPage = () => {
-    const params = useParams()
-    const { id } = params
-    console.log('Studio ID:', id) 
+import { StudioDetailsView } from "@/components/StudioDetails/studio-details-view"
 
-  return (
-    <div>DetailsPage</div>
-  )
+export const metadata: Metadata = {
+  title: "Studio details — StudioSpace",
+  description:
+    "View studio photos, amenities, host details and hourly pricing, then request a booking.",
 }
 
-export default DetailsPage
+export default async function StudioDetailsPage({
+  params,
+}: PageProps<"/studios/[id]">) {
+  const { id } = await params
+
+  return <StudioDetailsView key={id} studioId={id} />
+}

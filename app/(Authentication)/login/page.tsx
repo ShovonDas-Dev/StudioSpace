@@ -52,12 +52,41 @@ export default function LoginPage() {
   })
   const router = useRouter()
 
+const handleGoogleLogin = async () => {
+  try {
+    const { data, error } = await authClient.signIn.social({
+      provider: "google",
+      callbackURL: "/dashboard",
+    });
+
+    if (error) {
+      toast.add({
+        title: "Google Login Failed",
+        description: error.message ?? "Something went wrong.",
+        type: "error",
+      });
+      return;
+    }
+
+  } catch (error) {
+    console.error("Google Login Error:", error);
+
+    toast.add({
+      title: "Login Failed",
+      description: "Unable to login with Google. Please try again.",
+      type: "error",
+    });
+  }
+};
+
+
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     const { data, error } = await authClient.signIn.email({
       email: formData.email,
       password: formData.password,
     })
+    
 
     console.log("Signed in successfully:", data)
 
@@ -113,6 +142,7 @@ export default function LoginPage() {
 
             <div className="mt-8">
               <button
+                onClick={handleGoogleLogin}
                 type="button"
                 className="inline-flex h-12 w-full cursor-pointer items-center justify-center gap-3 rounded-full border border-input bg-background text-sm font-semibold text-foreground shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background active:scale-[0.98]"
               >

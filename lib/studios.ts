@@ -25,7 +25,24 @@ export type Studio = {
   reviews: number;
 };
 
-type RawStudio = {
+export type StudioDetails = {
+  id: string;
+  title: string;
+  category: string;
+  categoryLabel: string;
+  image: string;
+  hourlyRate: number;
+  deposit: number;
+  capacity: number;
+  size: number;
+  location: string;
+  description: string;
+  amenities: string[];
+  hostName: string;
+  hostBio: string;
+};
+
+export type RawStudio = {
   _id?: string;
   id?: string;
   studioName?: string;
@@ -34,10 +51,15 @@ type RawStudio = {
   coverImage?: string;
   image?: string;
   hourlyRate?: number | string;
+  deposit?: number | string;
+  securityDeposit?: number | string;
   capacity?: number | string;
+  size?: number | string;
   location?: string;
   description?: string;
   amenities?: unknown;
+  hostName?: string;
+  hostBio?: string;
 };
 
 function hashId(id: string): number {
@@ -74,5 +96,45 @@ export function normalizeStudio(raw: RawStudio): Studio | null {
       : [],
     rating,
     reviews,
+  };
+}
+
+function toNumber(value: number | string | undefined): number {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+export function getStudioDetailsUrl(id: string): string {
+  return `${API_URL}/${encodeURIComponent(id)}`;
+}
+
+export function normalizeStudioDetails(
+  raw: RawStudio
+): StudioDetails | null {
+  const id = raw._id ?? raw.id;
+  if (!id) return null;
+
+  const category = raw.category ?? "";
+
+  return {
+    id,
+    title: raw.studioName ?? raw.title ?? "Untitled studio",
+    category,
+    categoryLabel: categoryLabels[category] ?? "Studio",
+    image: raw.coverImage || raw.image || FALLBACK_IMAGE,
+    hourlyRate: toNumber(raw.hourlyRate),
+    deposit: toNumber(raw.deposit ?? raw.securityDeposit),
+    capacity: toNumber(raw.capacity),
+    size: toNumber(raw.size),
+    location: raw.location || "Location TBA",
+    description: raw.description?.trim() ?? "",
+    amenities: Array.isArray(raw.amenities)
+      ? raw.amenities.filter(
+          (amenity): amenity is string =>
+            typeof amenity === "string" && amenity.trim().length > 0
+        )
+      : [],
+    hostName: raw.hostName?.trim() || "StudioSpace host",
+    hostBio: raw.hostBio?.trim() ?? "",
   };
 }
