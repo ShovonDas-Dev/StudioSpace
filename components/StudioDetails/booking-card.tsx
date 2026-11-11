@@ -17,8 +17,8 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
 import { toast } from "@/components/ui/toast"
-import { authClient } from "@/lib/auth-client"
-import { saveBookingRequest } from "@/lib/bookings"
+import { authClient, getJwtToken } from "@/lib/auth-client"
+import { MY_BOOKINGS_API_URL } from "@/lib/bookings"
 import type { StudioDetails } from "@/lib/studios"
 
 const fieldClass =
@@ -67,36 +67,43 @@ export function BookingCard({ studio }: { studio: StudioDetails }) {
     event.preventDefault()
     if (!date || !user) return
 
-     const data = {
-      email: user?.email,
-      name: user?.name,
-      userImage: user?.image,
-      ...studio,
-     
-      bookingDate: date,
-      bookingTime: time,
-      bookingDuration: duration,
-      bookingSubtotal: subtotal,
-      bookingTotal: total,
-    }
+    try {
+      const token = await getJwtToken();
 
-    const res = await fetch("http://localhost:5000/booking", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(data),
-    })
-    
-    console.log(res)
-    
-    setOpen(false)
-    setDate("")
-    toast.add({
-      title: "Booking request saved",
-      description: `${studio.title} · ${date} at ${time}`,
-      type: "success",
-    })
+      if (!token) throw new Error("No token")
+
+      const res = await fetch(MY_BOOKINGS_API_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          studioId: studio.id,
+          bookingDate: date,
+          bookingTime: time,
+          bookingDuration: duration,
+        }),
+      })
+
+      if (!res.ok) {
+        throw new Error(`Booking request failed (${res.status})`)
+      }
+
+      setOpen(false)
+      setDate("")
+      toast.add({
+        title: "Booking request saved",
+        description: `${studio.title} · ${date} at ${time}`,
+        type: "success",
+      })
+    } catch {
+      toast.add({
+        title: "Could not create booking",
+        description: "Make sure the API is running, then try again.",
+        type: "error",
+      })
+    }
   }
 
   return (

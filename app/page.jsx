@@ -3,7 +3,7 @@ import { HeroSection } from "../components/Hero/hero-section";
 import FeaturedStudio from "../components/Home/FeaturedStudio";
 import StudioCategories from "../components/Home/StudioCategories";
 import HowItWorks from "../components/Home/HowItWorks";
-import ForHosts from "../components/Home/ForHosts";
+import ForHosts from "../components/Home/ForHosts"
 
 export default function Home() {
   return (

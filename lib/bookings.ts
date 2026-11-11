@@ -1,4 +1,7 @@
-export const BOOKING_API_URL = "http://localhost:5000/booking";
+export const BOOKING_API_URL =
+  process.env.BOOKING_API_URL ?? "http://localhost:5000/booking";
+
+export const MY_BOOKINGS_API_URL = "/api/bookings";
 
 export const FALLBACK_BOOKING_IMAGE = "/assets/studio-photo-dRYpf4Lz.jpg";
 
@@ -83,11 +86,15 @@ export type BookingRequestPayload = {
 };
 
 export async function saveBookingRequest(
-  payload: BookingRequestPayload
+  payload: BookingRequestPayload,
+  authorization?: string
 ): Promise<{ ok: boolean }> {
   const res = await fetch(BOOKING_API_URL, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      ...(authorization ? { Authorization: authorization } : {}),
+    },
     body: JSON.stringify(payload),
   });
 
@@ -98,11 +105,38 @@ export async function saveBookingRequest(
   return { ok: res.ok };
 }
 
-export async function cancelBooking(id: string): Promise<Booking> {
+export async function fetchBookingById(
+  id: string,
+  authorization?: string
+): Promise<Booking | null> {
+  const res = await fetch(BOOKING_API_URL, {
+    cache: "no-store",
+    ...(authorization ? { headers: { Authorization: authorization } } : {}),
+  });
+
+  if (!res.ok) {
+    return null;
+  }
+
+  const data = await res.json();
+
+  const match = (Array.isArray(data) ? data : [])
+    .map(normalizeBooking)
+    .find((booking): booking is Booking => booking !== null && booking._id === id);
+
+  return match ?? null;
+}
+
+export async function cancelBooking(
+  id: string,
+  token: string
+): Promise<Booking> {
   const res = await fetch(`/api/bookings/${encodeURIComponent(id)}`, {
     method: "PATCH",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ status: "Cancelled" }),
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
   });
 
   if (!res.ok) {

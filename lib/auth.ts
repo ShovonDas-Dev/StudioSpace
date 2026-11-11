@@ -5,14 +5,14 @@ import { mongodbAdapter } from "@better-auth/mongo-adapter";
 import { jwt } from "better-auth/plugins";
 
 const client = new MongoClient(process.env.MONGODB_URI as string);
-const db = client.db("studioSpace");
+export const db = client.db("studioSpace");
+
+const baseURL = process.env.BETTER_AUTH_URL ?? "http://localhost:3000";
 
 export const auth = betterAuth({
-  baseURL: "http://localhost:3000",
+  baseURL,
 
-  trustedOrigins: [
-    "http://localhost:3000",
-  ],
+  trustedOrigins: [baseURL],
 
   database: mongodbAdapter(db, {
     client,

@@ -7,3 +7,8 @@ export const authClient = createAuthClient({
 
   plugins: [jwtClient()],
 });
+
+export async function getJwtToken(): Promise<string | null> {
+  const { data } = await authClient.token();
+  return data?.token ?? null;
+}

@@ -19,7 +19,7 @@ import { BlockRoute } from "@/components/My UI/BlockRoute"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { toast } from "@/components/ui/toast"
-import { authClient } from "@/lib/auth-client"
+import { authClient, getJwtToken } from "@/lib/auth-client"
 import { cn } from "@/lib/utils"
 import { normalizeStudio, type Studio } from "@/lib/studios"
 import EditStudioDialog from "./EditStudioDialog"
@@ -78,7 +78,13 @@ export function MyListingsView() {
         setLoading(true)
         setError(false)
 
-        const res = await fetch(BOOKINGS_URL!)
+        const token = await getJwtToken()
+
+        if (!token) throw new Error("No token")
+
+        const res = await fetch(BOOKINGS_URL!, {
+          headers: { Authorization: `Bearer ${token}` },
+        })
 
         if (!res.ok) {
           throw new Error("Request failed")
@@ -142,10 +148,15 @@ const myRows = rows.filter((row) => {
   async function handleDelete(studio: Studio) {
 
     try {
+    const token = await getJwtToken()
+
+    if (!token) throw new Error("No token")
+
     const res = await fetch(
       `http://localhost:5000/allStudio/${studio._id}`,
       {
         method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
       }
     );
 

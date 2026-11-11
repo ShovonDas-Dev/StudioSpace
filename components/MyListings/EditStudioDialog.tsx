@@ -11,7 +11,7 @@ import {
 import { Pencil } from "lucide-react";
 import { Studio, } from "@/lib/studios";
 import { Field } from "../ui/field";
-import { authClient } from "@/lib/auth-client";
+import { authClient, getJwtToken } from "@/lib/auth-client";
 import { toast } from "@/components/ui/toast"
 
 const API_URL = "http://localhost:5000/allStudio";
@@ -153,10 +153,15 @@ export default function EditStudioDialog({
         setError("");
 
         try {
+            const token = await getJwtToken();
+
+            if (!token) throw new Error("No token");
+
             const response = await fetch(`${API_URL}/${id}`, {
                 method: "PATCH",
                 headers: {
                     "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
                 },
                 body: JSON.stringify({
                     ...data
@@ -268,7 +273,7 @@ export default function EditStudioDialog({
                                 ["size", "Size (sq ft)"],
                             ] as const
                         ).map(([key, label]) => (
-                            <Field key={key} label={label}>
+                            <Field key={key}>
                                 <input
                                     placeholder={`Enter ${label.toLowerCase()}`}
                                     type="number"

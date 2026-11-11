@@ -10,7 +10,7 @@ import {
   LayoutGrid, 
 } from "lucide-react"
 import { cn } from "cn"
-import { authClient } from "@/lib/auth-client"
+import { authClient, getJwtToken } from "@/lib/auth-client"
 
 const inputClass =
   "flex h-12 w-full rounded-xl border border-input bg-background px-3 py-1 text-base shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 md:text-sm"
@@ -202,10 +202,17 @@ export default function AddStudioPage() {
 
     // backend API call to send form data to the server
 
-    const res = await fetch("http://localhost:5000/add-studio" ,  { 
-        method: "POST", 
-        headers: { "Content-Type": "application/json" }, 
-        body: JSON.stringify(form) 
+    const token = await getJwtToken()
+
+    if (!token) throw new Error("No token")
+
+    const res = await fetch("http://localhost:5000/add-studio" ,  {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(form)
     })
     const data = await res.json()
     console.log("Server response:", data)

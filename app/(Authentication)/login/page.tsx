@@ -52,9 +52,10 @@ export default function LoginPage() {
   })
   const router = useRouter()
 
+
 const handleGoogleLogin = async () => {
   try {
-    const { data, error } = await authClient.signIn.social({
+    const { error } = await authClient.signIn.social({
       provider: "google",
       callbackURL: "/",
     });
@@ -78,6 +79,7 @@ const handleGoogleLogin = async () => {
     });
   }
 };
+
 
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {

@@ -18,13 +18,13 @@ import { BlockRoute } from "@/components/My UI/BlockRoute"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { toast } from "@/components/ui/toast"
-import { authClient } from "@/lib/auth-client"
+import { authClient, getJwtToken } from "@/lib/auth-client"
 import {
   cancelBooking,
   normalizeBooking,
-  BOOKING_API_URL,
+  MY_BOOKINGS_API_URL,
 } from "@/lib/bookings"
-import type { Booking } from "@/lib/bookings"
+import type { Booking, RawBooking } from "@/lib/bookings"
 import { cn } from "@/lib/utils"
 import DeleteDialog from "./DeleteDialog"
 
@@ -60,25 +60,31 @@ export function MyBookingsView() {
   const [cancellingId, setCancellingId] = useState<string | null>(null)
 
   useEffect(() => {
-    if (isPending || !user?.email) return
+    if (isPending || !user?.id) return
 
     let active = true
 
     async function loadBookings() {
       try {
-        const res = await fetch(BOOKING_API_URL)
+        const token = await getJwtToken()
+
+        if (!token) throw new Error("No token")
+
+        const res = await fetch(MY_BOOKINGS_API_URL, {
+          headers: { Authorization: `Bearer ${token}` },
+        })
 
         if (!res.ok) {
           throw new Error("Request failed")
         }
 
         const data = await res.json()
-        const email = user?.email?.toLowerCase()
 
-        const bookings = (Array.isArray(data) ? data : [])
+        const raw: RawBooking[] = data?.bookings ?? []
+
+        const bookings = raw
           .map(normalizeBooking)
           .filter((booking): booking is Booking => booking !== null)
-          .filter((booking) => booking.email.toLowerCase() === email)
 
         if (active) {
           setRows(bookings)
@@ -95,14 +101,18 @@ export function MyBookingsView() {
     return () => {
       active = false
     }
-  }, [isPending, user?.email])
+  }, [isPending, user?.id])
 
   // Cancel booking
   async function handleCancel(booking: Booking) {
     setCancellingId(booking._id)
 
     try {
-      const updated = await cancelBooking(booking._id)
+      const token = await getJwtToken()
+
+      if (!token) throw new Error("No token")
+
+      const updated = await cancelBooking(booking._id, token)
 
       setRows((current) =>
         current.map((row) =>
@@ -128,12 +138,16 @@ export function MyBookingsView() {
 
   // Delete booking
   async function handleDeleteBooking(id: Booking["_id"]) {
-    const response = await fetch(
-      `http://localhost:5000/booking/${id}`,
-      {
-        method: "DELETE",
-      }
-    )
+    const token = await getJwtToken()
+
+    if (!token) {
+      throw new Error("No token")
+    }
+
+    const response = await fetch(`${MY_BOOKINGS_API_URL}/${id}`, {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${token}` },
+    })
 
     if (!response.ok) {
       throw new Error("Failed to delete booking")

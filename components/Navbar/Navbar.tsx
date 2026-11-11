@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { Suspense } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { MenuIcon, XIcon } from "lucide-react"
@@ -24,6 +25,37 @@ const mobileLinkClass =
   "rounded-xl px-3 py-3 font-medium text-muted-foreground transition-colors hover:text-foreground data-[status=active]:bg-accent data-[status=active]:text-accent-foreground"
 
 export function Navbar() {
+  return (
+    <Suspense fallback={<NavbarFallback />}>
+      <NavbarContent />
+    </Suspense>
+  )
+}
+
+function NavbarFallback() {
+  return (
+    <header className="sticky top-0 z-50 border-b border-border/70 bg-background/80 backdrop-blur-xl">
+      <div className="container-page flex h-16 items-center justify-between gap-4">
+        <Link
+          href="/"
+          aria-label="StudioSpace home"
+          className="flex items-center gap-2"
+        >
+          <span className="grid h-9 w-9 place-items-center rounded-xl bg-primary font-display text-lg font-bold text-primary-foreground">
+            S
+          </span>
+          <span className="font-display text-xl font-semibold tracking-tight">
+            Studio<span className="text-primary">Space</span>
+          </span>
+        </Link>
+
+        <div className="h-10 w-24" />
+      </div>
+    </header>
+  )
+}
+
+function NavbarContent() {
   const pathname = usePathname()
   const [isMenuOpen, setIsMenuOpen] = React.useState(false)
 
