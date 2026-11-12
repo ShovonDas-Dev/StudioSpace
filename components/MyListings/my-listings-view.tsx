@@ -54,7 +54,7 @@ export function MyListingsView() {
   const user = session?.user
 
   const BOOKINGS_URL = user?.email
-    ? `http://localhost:5000/allStudio?hostEmail=${encodeURIComponent(user.email)}`
+    ? `${process.env.API_URL}/allStudio?hostEmail=${encodeURIComponent(user.email)}`
     : null
 
   const [rows, setRows] = useState<RawBooking[]>([])
@@ -153,7 +153,7 @@ const myRows = rows.filter((row) => {
     if (!token) throw new Error("No token")
 
     const res = await fetch(
-      `http://localhost:5000/allStudio/${studio._id}`,
+      `${process.env.API_URL}/allStudio/${studio._id}`,
       {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },

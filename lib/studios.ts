@@ -1,4 +1,4 @@
-export const API_URL = "http://localhost:5000/allStudio";
+export const API_URL = `${process.env.API_URL}/allStudio`;
 
 const FALLBACK_IMAGE = "/assets/studio-photo-dRYpf4Lz.jpg";
 

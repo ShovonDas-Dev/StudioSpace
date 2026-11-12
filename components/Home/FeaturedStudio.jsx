@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ArrowRight, MapPin, Star, Users } from "lucide-react";
 
-const API_URL = "http://localhost:5000/allStudio";
+const API_URI = `${process.env.API_URL}/allStudio`;
 
 const categoryLabels = {
   photography: "Photography",
@@ -117,7 +117,7 @@ export default function FeaturedStudio() {
   useEffect(() => {
     const getStudios = async () => {
       try {
-        const response = await fetch(API_URL);
+        const response = await fetch(API_URI);
 
         if (!response.ok) {
           throw new Error("Failed to fetch studios");

@@ -11,6 +11,7 @@ import {
 } from "lucide-react"
 import { cn } from "cn"
 import { authClient, getJwtToken } from "@/lib/auth-client"
+import BlockRoute from "@/components/My UI/BlockRoute"
 
 const inputClass =
   "flex h-12 w-full rounded-xl border border-input bg-background px-3 py-1 text-base shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 md:text-sm"
@@ -127,7 +128,7 @@ function SelectBox({
 
 export default function AddStudioPage() {
   const { data: session } = authClient.useSession();
-
+  if(!session) return <BlockRoute />
   const userName = session?.user.name
   const userEmail = session?.user.email
   const userImage = session?.user.image
@@ -206,7 +207,7 @@ export default function AddStudioPage() {
 
     if (!token) throw new Error("No token")
 
-    const res = await fetch("http://localhost:5000/add-studio" ,  {
+    const res = await fetch(`${process.env.API_URL}/add-studio`,  {
         method: "POST",
         headers: {
             "Content-Type": "application/json",

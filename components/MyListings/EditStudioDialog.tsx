@@ -14,7 +14,7 @@ import { Field } from "../ui/field";
 import { authClient, getJwtToken } from "@/lib/auth-client";
 import { toast } from "@/components/ui/toast"
 
-const API_URL = "http://localhost:5000/allStudio";
+const API_URL = `${process.env.API_URL}/allStudio`;
 
 type Props = {
     studio: Studio;

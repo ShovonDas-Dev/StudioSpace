@@ -1,0 +1,533 @@
+diff --git a/app/(Authentication)/login/page.tsx b/app/(Authentication)/login/page.tsx
+index 83d12ed..37a5cb3 100644
+--- a/app/(Authentication)/login/page.tsx
++++ b/app/(Authentication)/login/page.tsx
+@@ -187,12 +187,12 @@ const handleGoogleLogin = async () => {
+                   >
+                     Password
+                   </label>
+-                  <Link
++                  {/* <Link
+                     href="/login"
+                     className="text-sm font-medium text-primary underline-offset-4 hover:underline"
+                   >
+                     Forgot password?
+-                  </Link>
++                 </Link> */}
+                 </div>
+                 <div className="relative">
+                   <input
+diff --git a/app/add-studio/page.tsx b/app/add-studio/page.tsx
+index cf232c2..5af9d47 100644
+--- a/app/add-studio/page.tsx
++++ b/app/add-studio/page.tsx
+@@ -11,6 +11,7 @@ import {
+ } from "lucide-react"
+ import { cn } from "cn"
+ import { authClient, getJwtToken } from "@/lib/auth-client"
++import BlockRoute from "@/components/My UI/BlockRoute"
+ 
+ const inputClass =
+   "flex h-12 w-full rounded-xl border border-input bg-background px-3 py-1 text-base shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 md:text-sm"
+@@ -127,7 +128,7 @@ function SelectBox({
+ 
+ export default function AddStudioPage() {
+   const { data: session } = authClient.useSession();
+-
++  if(!session) return <BlockRoute />
+   const userName = session?.user.name
+   const userEmail = session?.user.email
+   const userImage = session?.user.image
+@@ -206,7 +207,7 @@ export default function AddStudioPage() {
+ 
+     if (!token) throw new Error("No token")
+ 
+-    const res = await fetch("http://localhost:5000/add-studio" ,  {
++    const res = await fetch(`${process.env.API_URL}/add-studio`,  {
+         method: "POST",
+         headers: {
+             "Content-Type": "application/json",
+diff --git a/app/studios/page.tsx b/app/studios/page.tsx
+index 372b706..647cbbe 100644
+--- a/app/studios/page.tsx
++++ b/app/studios/page.tsx
+@@ -1,6 +1,8 @@
+ import type { Metadata } from "next"
+ 
++import { Suspense } from "react"
+ import { ExploreView } from "@/components/Explore/explore-view"
++import { Spinner } from "@/components/ui/spinner"
+ 
+ export const metadata: Metadata = {
+   title: "Explore — StudioSpace",
+@@ -10,12 +12,15 @@ export const metadata: Metadata = {
+ 
+ export default function ExplorePage() {
+   return (
+-    <main className="container-page flex-1 pb-16 pt-10 md:pt-14">
++    <Suspense fallback={<Spinner className="mx-auto mt-20" />}>
++      <main className="container-page flex-1 pb-16 pt-10 md:pt-14">
+       <p className="eyebrow">Explore</p>
+       <h1 className="mt-3 text-5xl font-semibold md:text-6xl">
+         Find your next set
+       </h1>
+       <ExploreView />
+     </main>
++    </Suspense>
+   )
+ }
++    
+diff --git a/components/Explore/explore-view.tsx b/components/Explore/explore-view.tsx
+index b4caaa0..122fc4f 100644
+--- a/components/Explore/explore-view.tsx
++++ b/components/Explore/explore-view.tsx
+@@ -1,7 +1,9 @@
++
+ "use client"
+ 
+ import { useEffect, useMemo, useState } from "react"
+ import Link from "next/link"
++import { usePathname, useRouter, useSearchParams } from "next/navigation"
+ import { Search } from "lucide-react"
+ import { cn } from "cn"
+ 
+@@ -14,6 +16,7 @@ import {
+   SelectTrigger,
+   SelectValue,
+ } from "@/components/ui/select"
++
+ import { API_URL, normalizeStudio, type Studio } from "@/lib/studios"
+ 
+ const categories = [
+@@ -33,89 +36,178 @@ const sortOptions = [
+ ]
+ 
+ export function ExploreView() {
++  const router = useRouter()
++  const pathname = usePathname()
++  const searchParams = useSearchParams()
++
++  // URL থেকে initial category নেওয়া
++  const getUrlCategory = () => {
++    const value = searchParams.get("category")
++
++    return categories.some((item) => item.value === value)
++      ? value!
++      : "all"
++  }
++
+   const [studios, setStudios] = useState<Studio[]>([])
+   const [loading, setLoading] = useState(true)
+   const [error, setError] = useState(false)
++
+   const [query, setQuery] = useState("")
+-  const [category, setCategory] = useState("all")
++  const [category, setCategory] = useState(getUrlCategory)
+   const [location, setLocation] = useState("all")
+   const [sort, setSort] = useState("recommended")
+ 
++  
+   useEffect(() => {
++    const urlCategory = searchParams.get("category")
++
++    const validCategory = categories.some(
++      (item) => item.value === urlCategory
++    )
++
++    setCategory(validCategory ? urlCategory! : "all")
++  }, [searchParams])
++
++
++  function handleCategoryChange(value: string) {
++    setCategory(value)
++
++    const params = new URLSearchParams(searchParams.toString())
++
++    if (value === "all") {
++      params.delete("category")
++    } else {
++      params.set("category", value)
++    }
++
++    const queryString = params.toString()
++
++    router.replace(
++      queryString ? `${pathname}?${queryString}` : pathname,
++      { scroll: false }
++    )
++  }
++
++  // API থেকে studios fetch
++  useEffect(() => {
++    const controller = new AbortController()
++
+     const getStudios = async () => {
+       try {
+-        const categoryQuery = category === "all" ? "" : `?category=${category}`
+-        const response = await fetch(`${API_URL}${categoryQuery}`)
++        setLoading(true)
++        setError(false)
++
++        const categoryQuery =
++          category === "all"
++            ? ""
++            : `?category=${encodeURIComponent(category)}`
++
++        const response = await fetch(
++          `${API_URL}${categoryQuery}`,
++          { signal: controller.signal }
++        )
++
++        if (!response.ok) {
++          throw new Error("Failed to fetch studios")
++        }
++
+         const data = await response.json()
+-        // console.log("Fetched Studios:", data)
+ 
+-        const studios = data.map(normalizeStudio)
+-         console.log("Normalized Studios:", studios)
+-        const filteredStudios = studios.filter(Boolean)
+-        //  console.log("Filtered Studios:", filteredStudios)
+-        setStudios(filteredStudios)
++        const normalizedStudios = data
++          .map(normalizeStudio)
++          .filter((studio: Studio | null): studio is Studio => Boolean(studio))
+ 
+-      } catch {
++        setStudios(normalizedStudios)
++      } catch (err) {
++        if (controller.signal.aborted) return
++
++        console.error("Studio fetch error:", err)
+         setError(true)
+       } finally {
+-        setLoading(false)
++        if (!controller.signal.aborted) {
++          setLoading(false)
++        }
+       }
+     }
+ 
+     getStudios()
++
++    return () => controller.abort()
+   }, [category])
+ 
+-  const uniqueLocations: string[] = []
+-  studios.forEach((studio) => {
+-    if (!uniqueLocations.includes(studio.location)) {
+-      uniqueLocations.push(studio.location);
+-    }
+-  });
+-  // console.log("Unique Locations:", uniqueLocations); // Log the unique locations
+ 
+-  const locationItems = [
+-    { value: "all", label: "All locations" },
+-    ...uniqueLocations.map((location) => ({
+-      value: location,
+-      label: location,
+-    })),
+-  ];
++  const locationItems = useMemo(() => {
++    const uniqueLocations = [
++      ...new Set(studios.map((studio) => studio.location)),
++    ]
+ 
+-  // console.log("Location Items:", locationItems); // Log the location items
++    return [
++      { value: "all", label: "All locations" },
++      ...uniqueLocations.map((item) => ({
++        value: item,
++        label: item,
++      })),
++    ]
++  }, [studios])
+ 
+-  const term = query.trim().toLowerCase();
++  // Search, location এবং category filter
++  const visibleStudios = useMemo(() => {
++    const term = query.trim().toLowerCase()
+ 
+-  const visibleStudios = studios.filter((studio) => {
+-    // Location filter
+-    if (location !== "all" && studio.location !== location) {
+-      return false;
+-    }
++    const filtered = studios.filter((studio) => {
++      // Category filter
++      if (
++        category !== "all" &&
++        studio.category.toLowerCase() !== category.toLowerCase()
++      ) {
++        return false
++      }
+ 
+-    // Search filter
+-    if (
+-      term &&
+-      !`${studio.name} ${studio.location} ${studio.description} ${studio.categoryLabel} ${studio.amenities.join(" ")}`
+-        .toLowerCase()
+-        .includes(term)
+-    ) {
+-      return false;
+-    }
++      // Location filter
++      if (location !== "all" && studio.location !== location) {
++        return false
++      }
+ 
+-    return true;
+-  });
++      // Search filter
++      if (
++        term &&
++        !`${studio.name} ${studio.location} ${studio.description} ${studio.categoryLabel} ${studio.amenities.join(" ")}`
++          .toLowerCase()
++          .includes(term)
++      ) {
++        return false
++      }
+ 
+-  // Sorting
+-  if (sort === "price-asc") {
+-    visibleStudios.sort((a, b) => a.hourlyRate - b.hourlyRate);
+-  } else if (sort === "price-desc") {
+-    visibleStudios.sort((a, b) => b.hourlyRate - a.hourlyRate);
+-  }
++      return true
++    })
++
++    // Sorting
++    if (sort === "price-asc") {
++      filtered.sort((a, b) => a.hourlyRate - b.hourlyRate)
++    } else if (sort === "price-desc") {
++      filtered.sort((a, b) => b.hourlyRate - a.hourlyRate)
++    }
++
++    return filtered
++  }, [studios, category, location, query, sort])
+ 
++  // Reset filters
+   function resetFilters() {
+     setQuery("")
+     setCategory("all")
+     setLocation("all")
+     setSort("recommended")
++
++    const params = new URLSearchParams(searchParams.toString())
++    params.delete("category")
++
++    const queryString = params.toString()
++
++    router.replace(
++      queryString ? `${pathname}?${queryString}` : pathname,
++      { scroll: false }
++    )
+   }
+ 
+   if (loading) {
+@@ -135,9 +227,12 @@ export function ExploreView() {
+       </p>
+ 
+       <div className="mt-6 rounded-3xl border border-border bg-card p-3 shadow-soft">
++
++        {/* Search and Select */}
+         <div className="flex flex-col gap-2 lg:flex-row">
+           <div className="relative flex-1">
+             <Search className="pointer-events-none absolute left-4 top-1/2 size-5 -translate-y-1/2 text-muted-foreground" />
++
+             <Input
+               value={query}
+               onChange={(event) => setQuery(event.target.value)}
+@@ -148,6 +243,8 @@ export function ExploreView() {
+           </div>
+ 
+           <div className="flex gap-2">
++
++            {/* Location */}
+             <Select
+               items={locationItems}
+               value={location}
+@@ -159,6 +256,7 @@ export function ExploreView() {
+               >
+                 <SelectValue />
+               </SelectTrigger>
++
+               <SelectContent>
+                 {locationItems.map((item) => (
+                   <SelectItem key={item.value} value={item.value}>
+@@ -168,10 +266,13 @@ export function ExploreView() {
+               </SelectContent>
+             </Select>
+ 
++            {/* Sort */}
+             <Select
+               items={sortOptions}
+               value={sort}
+-              onValueChange={(value) => setSort(value ?? "recommended")}
++              onValueChange={(value) =>
++                setSort(value ?? "recommended")
++              }
+             >
+               <SelectTrigger
+                 aria-label="Sort studios"
+@@ -179,6 +280,7 @@ export function ExploreView() {
+               >
+                 <SelectValue />
+               </SelectTrigger>
++
+               <SelectContent>
+                 {sortOptions.map((item) => (
+                   <SelectItem key={item.value} value={item.value}>
+@@ -187,16 +289,18 @@ export function ExploreView() {
+                 ))}
+               </SelectContent>
+             </Select>
++
+           </div>
+         </div>
+ 
++        {/* Category Buttons */}
+         <div className="flex flex-wrap gap-2 px-1 pb-1 pt-3">
+           {categories.map((item) => (
+             <button
+               key={item.value}
+               type="button"
+               aria-pressed={category === item.value}
+-              onClick={() => setCategory(item.value)}
++              onClick={() => handleCategoryChange(item.value)}
+               className={cn(
+                 "h-9 cursor-pointer rounded-full px-4 text-sm font-medium transition-colors",
+                 category === item.value
+@@ -210,12 +314,17 @@ export function ExploreView() {
+         </div>
+       </div>
+ 
++      {/* Empty State */}
+       {visibleStudios.length === 0 ? (
+         <div className="mt-8 rounded-3xl border border-dashed border-border bg-card px-6 py-16 text-center">
+-          <p className="text-lg font-semibold">No studios match your search</p>
++          <p className="text-lg font-semibold">
++            No studios match your search
++          </p>
++
+           <p className="mt-2 text-sm text-muted-foreground">
+             Try a different keyword, location or category.
+           </p>
++
+           <button
+             type="button"
+             onClick={resetFilters}
+@@ -225,11 +334,14 @@ export function ExploreView() {
+           </button>
+         </div>
+       ) : (
++
++        /* Studio Cards */
+         <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+           {visibleStudios.map((studio) => (
+             <StudioCard key={studio.id} studio={studio} />
+           ))}
+         </div>
++
+       )}
+ 
+       <p className="mt-12 text-center text-sm text-muted-foreground">
+@@ -252,6 +364,7 @@ export function ExploreSkeleton() {
+ 
+       <div className="mt-6 rounded-3xl border border-border bg-card p-3">
+         <div className="h-11 w-full animate-pulse rounded-full bg-muted" />
++
+         <div className="flex flex-wrap gap-2 px-1 pb-1 pt-3">
+           {[0, 1, 2, 3, 4].map((index) => (
+             <div
+@@ -269,6 +382,7 @@ export function ExploreSkeleton() {
+             className="overflow-hidden rounded-3xl border border-border bg-card"
+           >
+             <div className="aspect-[3/2] animate-pulse bg-muted" />
++
+             <div className="space-y-3 p-5">
+               <div className="h-6 w-2/3 animate-pulse rounded-full bg-muted" />
+               <div className="h-4 w-1/2 animate-pulse rounded-full bg-muted" />
+@@ -283,7 +397,10 @@ export function ExploreSkeleton() {
+ export function ExploreError() {
+   return (
+     <div className="mt-6 rounded-3xl border border-dashed border-border bg-card px-6 py-16 text-center">
+-      <p className="text-lg font-semibold">Studios are unavailable right now</p>
++      <p className="text-lg font-semibold">
++        Studios are unavailable right now
++      </p>
++
+       <p className="mt-2 text-sm text-muted-foreground">
+         Make sure the studio API is running, then refresh this page.
+       </p>
+diff --git a/components/Home/FeaturedStudio.jsx b/components/Home/FeaturedStudio.jsx
+index 38d91a4..7409847 100644
+--- a/components/Home/FeaturedStudio.jsx
++++ b/components/Home/FeaturedStudio.jsx
+@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
+ import Link from "next/link";
+ import { ArrowRight, MapPin, Star, Users } from "lucide-react";
+ 
+-const API_URL = "http://localhost:5000/allStudio";
++const API_URL = `${process.env.NEXT_PUBLIC_API_URL}/allStudio`;
+ 
+ const categoryLabels = {
+   photography: "Photography",
+diff --git a/components/MyListings/EditStudioDialog.tsx b/components/MyListings/EditStudioDialog.tsx
+index 3e337fa..f87423c 100644
+--- a/components/MyListings/EditStudioDialog.tsx
++++ b/components/MyListings/EditStudioDialog.tsx
+@@ -14,7 +14,7 @@ import { Field } from "../ui/field";
+ import { authClient, getJwtToken } from "@/lib/auth-client";
+ import { toast } from "@/components/ui/toast"
+ 
+-const API_URL = "http://localhost:5000/allStudio";
++const API_URL = `${process.env.NEXT_PUBLIC_API_URL}/allStudio`;
+ 
+ type Props = {
+     studio: Studio;
+diff --git a/components/MyListings/my-listings-view.tsx b/components/MyListings/my-listings-view.tsx
+index b12c618..2f99538 100644
+--- a/components/MyListings/my-listings-view.tsx
++++ b/components/MyListings/my-listings-view.tsx
+@@ -54,7 +54,7 @@ export function MyListingsView() {
+   const user = session?.user
+ 
+   const BOOKINGS_URL = user?.email
+-    ? `http://localhost:5000/allStudio?hostEmail=${encodeURIComponent(user.email)}`
++    ? `${process.env.NEXT_PUBLIC_API_URL}/allStudio?hostEmail=${encodeURIComponent(user.email)}`
+     : null
+ 
+   const [rows, setRows] = useState<RawBooking[]>([])
+@@ -153,7 +153,7 @@ const myRows = rows.filter((row) => {
+     if (!token) throw new Error("No token")
+ 
+     const res = await fetch(
+-      `http://localhost:5000/allStudio/${studio._id}`,
++      `${process.env.NEXT_PUBLIC_API_URL}/allStudio/${studio._id}`,
+       {
+         method: "DELETE",
+         headers: { Authorization: `Bearer ${token}` },
+diff --git a/lib/bookings.ts b/lib/bookings.ts
+index c514301..676f236 100644
+--- a/lib/bookings.ts
++++ b/lib/bookings.ts
+@@ -1,5 +1,5 @@
+ export const BOOKING_API_URL =
+-  process.env.BOOKING_API_URL ?? "http://localhost:5000/booking";
++  process.env.BOOKING_API_URL ?? `${process.env.API_URL}/booking`;
+ 
+ export const MY_BOOKINGS_API_URL = "/api/bookings";
+ 
+diff --git a/lib/studios.ts b/lib/studios.ts
+index 5bd611d..5b41d71 100644
+--- a/lib/studios.ts
++++ b/lib/studios.ts
+@@ -1,4 +1,4 @@
+-export const API_URL = "http://localhost:5000/allStudio";
++export const API_URL = `${process.env.NEXT_PUBLIC_API_URL}/allStudio`;
+ 
+ const FALLBACK_IMAGE = "/assets/studio-photo-dRYpf4Lz.jpg";
+ 

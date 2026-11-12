@@ -187,12 +187,12 @@ const handleGoogleLogin = async () => {
                   >
                     Password
                   </label>
-                  <Link
+                  {/* <Link
                     href="/login"
                     className="text-sm font-medium text-primary underline-offset-4 hover:underline"
                   >
                     Forgot password?
-                  </Link>
+                 </Link> */}
                 </div>
                 <div className="relative">
                   <input

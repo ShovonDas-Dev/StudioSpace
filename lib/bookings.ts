@@ -1,5 +1,5 @@
 export const BOOKING_API_URL =
-  process.env.BOOKING_API_URL ?? "http://localhost:5000/booking";
+  process.env.BOOKING_API_URL ?? `${process.env.API_URL}/booking`;
 
 export const MY_BOOKINGS_API_URL = "/api/bookings";
 
