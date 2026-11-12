@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState, type ReactNode } from "react"
-import Image from "next/image"
+import { SafeImage } from "@/components/common/safe-image"
 import Link from "next/link"
 import {
   AlertCircle,
@@ -197,7 +197,7 @@ export function StudioDetailsView({ studioId }: { studioId: string }) {
 
         {/* Image */}
         <div className="relative mt-7 aspect-[16/10] overflow-hidden rounded-[2rem] border border-border bg-card shadow-soft sm:aspect-[16/9] md:aspect-[21/9]">
-          <Image
+          <SafeImage
             src={studio.image}
             alt={studio.title}
             fill

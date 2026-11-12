@@ -1,5 +1,7 @@
+import { firstImage, sanitizeImageSrc } from "@/lib/image";
+
 export const BOOKING_API_URL =
-  process.env.BOOKING_API_URL ?? `${process.env.API_URL}/booking`;
+  process.env.BOOKING_API_URL ?? `${process.env.NEXT_PUBLIC_API_URL}/booking`;
 
 export const MY_BOOKINGS_API_URL = "/api/bookings";
 
@@ -62,12 +64,12 @@ export function normalizeBooking(raw: RawBooking): Booking | null {
     _id: id,
     email: raw.email ?? "",
     name: raw.name ?? "",
-    userImage: raw.userImage ?? "",
+    userImage: sanitizeImageSrc(raw.userImage) ?? "",
     studioId: raw.id ?? "",
     title: raw.studioName ?? raw.title ?? "Untitled studio",
     category: raw.category ?? "",
     categoryLabel: raw.categoryLabel ?? "Studio",
-    image: raw.coverImage || raw.image || FALLBACK_BOOKING_IMAGE,
+    image: firstImage(raw.coverImage, raw.image),
     location: raw.location || "Location TBA",
     bookingDate: raw.bookingDate ?? "",
     bookingTime: raw.bookingTime ?? "",

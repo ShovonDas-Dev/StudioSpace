@@ -58,7 +58,7 @@ export function ExploreView() {
   const [location, setLocation] = useState("all")
   const [sort, setSort] = useState("recommended")
 
-  
+
   useEffect(() => {
     const urlCategory = searchParams.get("category")
 

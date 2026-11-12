@@ -1,6 +1,6 @@
-export const API_URL = `${process.env.API_URL}/allStudio`;
+import { firstImage } from "@/lib/image";
 
-const FALLBACK_IMAGE = "/assets/studio-photo-dRYpf4Lz.jpg";
+export const API_URL = `${process.env.NEXT_PUBLIC_API_URL}/allStudio`;
 
 export const categoryLabels: Record<string, string> = {
   photography: "Photography",
@@ -85,7 +85,7 @@ export function normalizeStudio(raw: RawStudio): Studio | null {
     name: raw.studioName ?? raw.title ?? "Untitled studio",
     category,
     categoryLabel: categoryLabels[category] ?? "Studio",
-    image: raw.coverImage ?? raw.image ?? FALLBACK_IMAGE,
+    image: firstImage(raw.coverImage, raw.image),
     hourlyRate: Number(raw.hourlyRate) || 0,
     capacity: Number(raw.capacity) || 0,
     location: raw.location || "Location TBA",
@@ -122,7 +122,7 @@ export function normalizeStudioDetails(
     title: raw.studioName ?? raw.title ?? "Untitled studio",
     category,
     categoryLabel: categoryLabels[category] ?? "Studio",
-    image: raw.coverImage || raw.image || FALLBACK_IMAGE,
+    image: firstImage(raw.coverImage, raw.image),
     hourlyRate: toNumber(raw.hourlyRate),
     deposit: toNumber(raw.deposit ?? raw.securityDeposit),
     capacity: toNumber(raw.capacity),

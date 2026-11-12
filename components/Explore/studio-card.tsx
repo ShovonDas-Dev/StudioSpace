@@ -1,4 +1,4 @@
-import Image from "next/image";
+import { SafeImage } from "@/components/common/safe-image";
 import Link from "next/link";
 import { MapPin, Star, Users } from "lucide-react";
 
@@ -11,7 +11,7 @@ export function StudioCard({ studio }: { studio: Studio }) {
       className="group flex h-full flex-col overflow-hidden rounded-3xl border border-border bg-card shadow-soft transition-all duration-300 hover:-translate-y-1 hover:shadow-lift"
     >
       <div className="relative aspect-[3/2] overflow-hidden">
-        <Image
+        <SafeImage
           src={studio.image}
           alt={studio.name}
           fill

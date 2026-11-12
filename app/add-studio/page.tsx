@@ -11,6 +11,7 @@ import {
 } from "lucide-react"
 import { cn } from "cn"
 import { authClient, getJwtToken } from "@/lib/auth-client"
+import { sanitizeImageSrc } from "@/lib/image"
 import BlockRoute from "@/components/My UI/BlockRoute"
 
 const inputClass =
@@ -207,7 +208,7 @@ export default function AddStudioPage() {
 
     if (!token) throw new Error("No token")
 
-    const res = await fetch(`${process.env.API_URL}/add-studio`,  {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/add-studio`,  {
         method: "POST",
         headers: {
             "Content-Type": "application/json",
@@ -229,7 +230,7 @@ export default function AddStudioPage() {
             <div
               className="h-11 w-11 rounded-full bg-cover bg-center"
               style={{
-                backgroundImage: userImage ? `url(${userImage})` : "url(https://i.pravatar.cc/160?img=47)",
+                backgroundImage: `url(${sanitizeImageSrc(userImage) ?? "https://i.pravatar.cc/160?img=47"})`,
               }}
             />
             <div className="min-w-0">

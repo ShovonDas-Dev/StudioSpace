@@ -1,7 +1,6 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import Image from "next/image"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import {
@@ -16,6 +15,7 @@ import {
 } from "lucide-react"
 
 import { BlockRoute } from "@/components/My UI/BlockRoute"
+import { SafeImage } from "@/components/common/safe-image"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { toast } from "@/components/ui/toast"
@@ -54,7 +54,7 @@ export function MyListingsView() {
   const user = session?.user
 
   const BOOKINGS_URL = user?.email
-    ? `${process.env.API_URL}/allStudio?hostEmail=${encodeURIComponent(user.email)}`
+    ? `${process.env.NEXT_PUBLIC_API_URL}/allStudio?hostEmail=${encodeURIComponent(user.email)}`
     : null
 
   const [rows, setRows] = useState<RawBooking[]>([])
@@ -153,7 +153,7 @@ const myRows = rows.filter((row) => {
     if (!token) throw new Error("No token")
 
     const res = await fetch(
-      `${process.env.API_URL}/allStudio/${studio._id}`,
+      `${process.env.NEXT_PUBLIC_API_URL}/allStudio/${studio._id}`,
       {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
@@ -300,7 +300,7 @@ function ListingCard({studio,onDelete,}: {studio: Studio , onDelete: () => void}
   return (
     <article className="flex flex-col gap-4 rounded-3xl border border-border bg-card p-4 sm:flex-row sm:items-center sm:gap-6 sm:p-5">
       <div className="relative h-36 w-full shrink-0 overflow-hidden rounded-2xl sm:h-28 sm:w-44">
-        <Image
+        <SafeImage
           src={studio.image}
           alt={studio.name}
           fill

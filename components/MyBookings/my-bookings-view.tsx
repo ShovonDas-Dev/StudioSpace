@@ -2,7 +2,6 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import Image from "next/image"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import {
@@ -15,6 +14,7 @@ import {
 } from "lucide-react"
 
 import { BlockRoute } from "@/components/My UI/BlockRoute"
+import { SafeImage } from "@/components/common/safe-image"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { toast } from "@/components/ui/toast"
@@ -278,7 +278,7 @@ function BookingCard({
   return (
     <article className="flex flex-col gap-5 rounded-3xl border border-border bg-card p-4 sm:flex-row sm:items-center sm:gap-6 sm:p-6">
       <div className="relative h-36 w-full shrink-0 overflow-hidden rounded-2xl sm:h-28 sm:w-44">
-        <Image
+        <SafeImage
           src={booking.image}
           alt={booking.title}
           fill
